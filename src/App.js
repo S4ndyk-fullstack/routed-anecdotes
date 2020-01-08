@@ -1,15 +1,30 @@
 import React, { useState } from 'react'
+import {
+  BrowserRouter as Router,
+  Route, Link
+} from 'react-router-dom'
+import CreateNew from './CreateNew'
 
-const Menu = () => {
+const Menu = ({ anecdotes, addNew, anecdoteById, notify }) => {
   const padding = {
     paddingRight: 5
   }
   return (
-    <div>
-      <a href='#' style={padding}>anecdotes</a>
-      <a href='#' style={padding}>create new</a>
-      <a href='#' style={padding}>about</a>
-    </div>
+    <Router>
+      <div>
+        <div>
+          <Link style={padding} to='/'>Anecdotes</Link>
+          <Link style={padding} to='/create'>Create new</Link>
+          <Link style={padding} to='/about'>About</Link>
+        </div>
+        <div>
+          <Route exact path='/' render={() => <AnecdoteList anecdotes={anecdotes} />} />
+          <Route path='/create' render={() => <CreateNew addNew={addNew} notify={notify} />} />
+          <Route path='/about' render={() => <About />} />
+          <Route exact path='/anecdotes/:id' render={({match}) => <Anecdote anecdote={anecdoteById(match.params.id)} />} />
+        </div>
+      </div>
+    </Router>
   )
 }
 
@@ -17,10 +32,27 @@ const AnecdoteList = ({ anecdotes }) => (
   <div>
     <h2>Anecdotes</h2>
     <ul>
-      {anecdotes.map(anecdote => <li key={anecdote.id} >{anecdote.content}</li>)}
+      {
+        anecdotes.map(
+          anecdote =>
+            <li key={anecdote.id}>
+              <Link to={`/anecdotes/${anecdote.id}`}>{anecdote.content}</Link>
+            </li>
+        )
+      }
     </ul>
   </div>
 )
+
+const Anecdote = ({ anecdote }) => {
+  return (
+    <div>
+      <h2>{anecdote.content}</h2>
+      <div>has {anecdote.votes} likes</div>
+      <div>for more info {anecdote.info}</div>
+    </div>
+  )
+}
 
 const About = () => (
   <div>
@@ -44,44 +76,6 @@ const Footer = () => (
   </div>
 )
 
-const CreateNew = (props) => {
-  const [content, setContent] = useState('')
-  const [author, setAuthor] = useState('')
-  const [info, setInfo] = useState('')
-
-
-  const handleSubmit = (e) => {
-    e.preventDefault()
-    props.addNew({
-      content,
-      author,
-      info,
-      votes: 0
-    })
-  }
-
-  return (
-    <div>
-      <h2>create a new anecdote</h2>
-      <form onSubmit={handleSubmit}>
-        <div>
-          content
-          <input name='content' value={content} onChange={(e) => setContent(e.target.value)} />
-        </div>
-        <div>
-          author
-          <input name='author' value={author} onChange={(e) => setAuthor(e.target.value)} />
-        </div>
-        <div>
-          url for more info
-          <input name='info' value={info} onChange={(e) => setInfo(e.target.value)} />
-        </div>
-        <button>create</button>
-      </form>
-    </div>
-  )
-
-}
 
 const App = () => {
   const [anecdotes, setAnecdotes] = useState([
@@ -102,6 +96,11 @@ const App = () => {
   ])
 
   const [notification, setNotification] = useState('')
+
+  const notify = content => {
+    setNotification(content)
+    setTimeout(() => setNotification(''), 10000)
+  }
 
   const addNew = (anecdote) => {
     anecdote.id = (Math.random() * 10000).toFixed(0)
@@ -125,10 +124,8 @@ const App = () => {
   return (
     <div>
       <h1>Software anecdotes</h1>
-      <Menu />
-      <AnecdoteList anecdotes={anecdotes} />
-      <About />
-      <CreateNew addNew={addNew} />
+      <div>{notification}</div>
+      <Menu anecdotes={anecdotes} addNew={addNew} anecdoteById={anecdoteById} notify={notify} />
       <Footer />
     </div>
   )
